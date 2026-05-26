@@ -1,0 +1,22 @@
+{
+  "inputs": [
+    {
+      "name": "site",
+      "type": "text",
+      "prompt": "Instance URL",
+      "placeholder": "https://freshrss.example.com"
+    },
+    {
+      "name": "username",
+      "type": "text",
+      "prompt": "Username",
+      "placeholder": "your FreshRSS username"
+    },
+    {
+      "name": "api_password",
+      "type": "text",
+      "prompt": "API Password",
+      "placeholder": "FreshRSS API password (not login password)"
+    }
+  ]
+}

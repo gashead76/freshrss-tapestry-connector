@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": "star",
+      "name": "Star Article",
+      "icon": "tapestry.star"
+    },
+    {
+      "id": "unstar",
+      "name": "Unstar Article",
+      "icon": "tapestry.star.fill"
+    },
+    {
+      "id": "label_released",
+      "name": "Label: Released",
+      "icon": "tag"
+    }
+  ]
+}

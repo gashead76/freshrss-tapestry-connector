@@ -1,0 +1,11 @@
+{
+  "id": "com.jrollans.freshrss",
+  "display_name": "FreshRSS",
+  "needs_verification": true,
+  "verify_variables": true,
+  "provides_attachments": false,
+  "item_style": "article",
+  "default_color": "teal",
+  "minimum_app_version": "1.4",
+  "version": 2
+}
