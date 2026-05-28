@@ -23,6 +23,13 @@
       "type": "text",
       "prompt": "Label Name",
       "placeholder": "Released"
+    },
+    {
+      "name": "auto_mark_read",
+      "type": "switch",
+      "prompt": "Mark Articles as Read",
+      "value": "on",
+      "placeholder": "Automatically mark fetched articles as read"
     }
   ]
 }

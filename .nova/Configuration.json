@@ -1,6 +1,7 @@
 {
   "index.ignored_file_patterns" : [
-    ".DS_Store"
+    ".DS_Store",
+    ".nova"
   ],
   "workspace.color" : 2
 }

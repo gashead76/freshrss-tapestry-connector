@@ -92,8 +92,10 @@ function loadUnread(token) {
 
       processResults(results);
 
-      const ids = items.map((e) => e.id);
-      markRead(token, ids);
+      if (auto_mark_read === "on") {
+        const ids = items.map((e) => e.id);
+        markRead(token, ids);
+      }
     })
     .catch((err) => {
       if (getToken()) {
