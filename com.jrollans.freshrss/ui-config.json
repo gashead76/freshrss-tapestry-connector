@@ -30,6 +30,13 @@
       "prompt": "Mark Articles as Read",
       "value": "on",
       "placeholder": "Automatically mark fetched articles as read"
+    },
+    {
+      "name": "batch_size",
+      "type": "text",
+      "prompt": "Article Batch Size",
+      "value": "50",
+      "placeholder": "Number of articles to fetch (1-1000)"
     }
   ]
 }

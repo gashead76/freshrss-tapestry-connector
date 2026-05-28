@@ -24,19 +24,33 @@ function authHeaders(token) {
   return { "Authorization": "GoogleLogin auth=" + token };
 }
 
-// --- Verify ---
+// --- Verify --- and pick up favicons and other info.
 
 function verify() {
   fetchToken()
     .then((token) => {
-      return sendRequest(BASE() + "/reader/api/0/user-info", "GET", null, authHeaders(token));
-    })
-    .then((text) => {
-      const json = JSON.parse(text);
-      processVerification({
-        displayName: json.userEmail || username,
-        icon: null
-      });
+      return sendRequest(BASE() + "/reader/api/0/user-info", "GET", null, authHeaders(token))
+        .then((text) => {
+          const userInfo = JSON.parse(text);
+          const displayName = userInfo.userEmail || username;
+
+          // Fetch the site favicon using FreshRSS instance hostname
+          const faviconUrl = site.replace(/\/$/, "") + "/favicon.ico";
+
+          lookupIcon(site)
+            .then((iconUrl) => {
+              processVerification({
+                displayName: displayName,
+                icon: iconUrl || faviconUrl
+              });
+            })
+            .catch(() => {
+              processVerification({
+                displayName: displayName,
+                icon: faviconUrl
+              });
+            });
+        });
     })
     .catch((err) => {
       processError(err);
@@ -58,9 +72,8 @@ function load() {
 
 function loadUnread(token) {
   const headers = authHeaders(token);
-  const count = Math.min(1000, Math.max(1, parseInt(batch_size, 10) || 50));
   const url = BASE() + "/reader/api/0/stream/contents/user/-/state/com.google/reading-list"
-    + "?xt=user/-/state/com.google/read&n=" + count + "&output=json";
+    + "?xt=user/-/state/com.google/read&n=50&output=json";
 
   sendRequest(url, "GET", null, headers)
     .then((text) => {
