@@ -29,28 +29,15 @@ function authHeaders(token) {
 function verify() {
   fetchToken()
     .then((token) => {
-      return sendRequest(BASE() + "/reader/api/0/user-info", "GET", null, authHeaders(token))
-        .then((text) => {
-          const userInfo = JSON.parse(text);
-          const displayName = userInfo.userEmail || username;
-
-          // Fetch the site favicon using FreshRSS instance hostname
-          const faviconUrl = site.replace(/\/$/, "") + "/favicon.ico";
-
-          lookupIcon(site)
-            .then((iconUrl) => {
-              processVerification({
-                displayName: displayName,
-                icon: iconUrl || faviconUrl
-              });
-            })
-            .catch(() => {
-              processVerification({
-                displayName: displayName,
-                icon: faviconUrl
-              });
-            });
-        });
+      return sendRequest(BASE() + "/reader/api/0/user-info", "GET", null, authHeaders(token));
+    })
+    .then((text) => {
+      const userInfo = JSON.parse(text);
+      const faviconUrl = site.replace(/\/$/, "") + "/favicon.ico";
+      processVerification({
+        displayName: userInfo.userEmail || username,
+        icon: faviconUrl
+      });
     })
     .catch((err) => {
       processError(err);
