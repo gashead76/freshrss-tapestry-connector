@@ -11,9 +11,14 @@
       "icon": "tapestry.star.fill"
     },
     {
-      "id": "label_released",
-      "name": "Label: Released",
+      "id": "label_add",
+      "name": "Apply Label",
       "icon": "tag"
+    },
+    {
+      "id": "label_remove",
+      "name": "Remove Label",
+      "icon": "tag.fill"
     }
   ]
 }

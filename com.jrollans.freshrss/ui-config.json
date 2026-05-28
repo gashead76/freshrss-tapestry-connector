@@ -17,6 +17,12 @@
       "type": "text",
       "prompt": "API Password",
       "placeholder": "FreshRSS API password (not login password)"
+    },
+    {
+      "name": "label",
+      "type": "text",
+      "prompt": "Label Name",
+      "placeholder": "Released"
     }
   ]
 }

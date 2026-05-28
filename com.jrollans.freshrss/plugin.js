@@ -86,7 +86,7 @@ function loadUnread(token) {
           item.author = identity;
         }
 
-        item.actions = { "star": entry.id, "label_released": entry.id };
+        item.actions = { "star": entry.id, "label_add": entry.id };
         return item;
       });
 
@@ -157,15 +157,22 @@ function performAction(actionId, actionValue, item) {
       })
       .catch((err) => { actionComplete(null, err); });
 
-  } else if (actionId === "label_released") {
-    tag = "user/-/label/Released";
+  } else if (actionId === "label_add" || actionId === "label_remove") {
+    const isAdding = (actionId === "label_add");
+    tag = "user/-/label/" + (label || "Released");
     body = "i=" + encodeURIComponent(actionValue)
-      + "&a=" + encodeURIComponent(tag);
+      + (isAdding ? "&a=" : "&r=") + encodeURIComponent(tag);
 
     sendRequest(BASE() + "/reader/api/0/edit-tag", "POST", body, authHeaders(token))
       .then(() => {
         const actions = item.actions || {};
-        delete actions["label_released"];
+        if (isAdding) {
+          delete actions["label_add"];
+          actions["label_remove"] = actionValue;
+        } else {
+          delete actions["label_remove"];
+          actions["label_add"] = actionValue;
+        }
         item.actions = actions;
         actionComplete(item, null);
       })
