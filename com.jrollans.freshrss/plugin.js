@@ -58,8 +58,9 @@ function load() {
 
 function loadUnread(token) {
   const headers = authHeaders(token);
+  const count = Math.min(1000, Math.max(1, parseInt(batch_size, 10) || 50));
   const url = BASE() + "/reader/api/0/stream/contents/user/-/state/com.google/reading-list"
-    + "?xt=user/-/state/com.google/read&n=50&output=json";
+    + "?xt=user/-/state/com.google/read&n=" + count + "&output=json";
 
   sendRequest(url, "GET", null, headers)
     .then((text) => {
