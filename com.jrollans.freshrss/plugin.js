@@ -24,7 +24,7 @@ function authHeaders(token) {
   return { "Authorization": "GoogleLogin auth=" + token };
 }
 
-// --- Verify --- and pick up favicons and other info.
+// --- Verify ---
 
 function verify() {
   fetchToken()
@@ -48,73 +48,89 @@ function verify() {
 
 function load() {
   const token = getToken();
-  const doLoad = (tok) => loadUnread(tok);
-
   if (token) {
-    doLoad(token);
+    loadUnread(token);
   } else {
-    fetchToken().then(doLoad).catch(processError);
+    fetchToken().then(loadUnread).catch(processError);
   }
 }
 
 function loadUnread(token) {
   const headers = authHeaders(token);
-  const url = BASE() + "/reader/api/0/stream/contents/user/-/state/com.google/reading-list"
-    + "?xt=user/-/state/com.google/read&n=50&output=json";
+  const count = Math.min(1000, Math.max(1, parseInt(batch_size, 10) || 50));
+  const streamUrl = BASE() + "/reader/api/0/stream/contents/user/-/state/com.google/reading-list"
+    + "?xt=user/-/state/com.google/read&n=" + count + "&output=json";
+  const subsUrl = BASE() + "/reader/api/0/subscription/list?output=json";
 
-  sendRequest(url, "GET", null, headers)
-    .then((text) => {
-      const json = JSON.parse(text);
-      const items = json.items || [];
+  Promise.all([
+    sendRequest(streamUrl, "GET", null, headers),
+    sendRequest(subsUrl, "GET", null, headers)
+  ])
+  .then(([streamText, subsText]) => {
+    const stream = JSON.parse(streamText);
+    const subs = JSON.parse(subsText);
 
-      if (items.length === 0) {
-        processResults([]);
-        return;
+    // Build a streamId -> iconUrl map
+    const iconMap = {};
+    for (const sub of (subs.subscriptions || [])) {
+      if (sub.id && sub.iconUrl) {
+        iconMap[sub.id] = sub.iconUrl;
       }
+    }
 
-      const results = items.map((entry) => {
-        const uri = canonicalUrl(entry) || entry.id;
-        const date = new Date((entry.published || 0) * 1000);
+    const entries = stream.items || [];
+    if (entries.length === 0) {
+      processResults([]);
+      return;
+    }
 
-        const item = Item.createWithUriDate(uri, date);
-        item.title = entry.title || "(untitled)";
-        item.body = entryBody(entry);
+    const results = entries.map((entry) => {
+      const uri = canonicalUrl(entry) || entry.id;
+      const date = new Date((entry.published || 0) * 1000);
 
-        const src = entry.origin;
-        if (src) {
-          const identity = Identity.createWithName(src.title || src.streamId);
-          identity.uri = src.htmlUrl || null;
-          item.author = identity;
+      const item = Item.createWithUriDate(uri, date);
+      item.title = entry.title || "(untitled)";
+      item.body = entryBody(entry);
+
+      const src = entry.origin;
+      if (src) {
+        const identity = Identity.createWithName(src.title || src.streamId);
+        identity.uri = src.htmlUrl || null;
+        const icon = iconMap[src.streamId];
+        if (icon) {
+          identity.avatar = icon;
         }
-
-        const cats = entry.categories || [];
-        const isStarred = cats.includes("user/-/state/com.google/starred");
-        const isLabeled = cats.includes("user/-/label/" + (label || "Released"));
-
-        item.actions = {};
-        item.actions[isStarred ? "unstar" : "star"] = entry.id;
-        item.actions[isLabeled ? "label_remove" : "label_add"] = entry.id;
-
-        return item;
-      });
-
-      processResults(results);
-
-      if (auto_mark_read === "on") {
-        const ids = items.map((e) => e.id);
-        markRead(token, ids);
+        item.author = identity;
       }
-    })
-    .catch((err) => {
-      if (getToken()) {
-        setItem(TOKEN_KEY, null);
-        fetchToken()
-          .then((newToken) => loadUnread(newToken))
-          .catch(processError);
-      } else {
-        processError(err);
-      }
+
+      const cats = entry.categories || [];
+      const isStarred = cats.includes("user/-/state/com.google/starred");
+      const isLabeled = cats.includes("user/-/label/" + (label || "Released"));
+
+      item.actions = {};
+      item.actions[isStarred ? "unstar" : "star"] = entry.id;
+      item.actions[isLabeled ? "label_remove" : "label_add"] = entry.id;
+
+      return item;
     });
+
+    processResults(results);
+
+    if (auto_mark_read === "on") {
+      const ids = entries.map((e) => e.id);
+      markRead(token, ids);
+    }
+  })
+  .catch((err) => {
+    if (getToken()) {
+      setItem(TOKEN_KEY, null);
+      fetchToken()
+        .then((newToken) => loadUnread(newToken))
+        .catch(processError);
+    } else {
+      processError(err);
+    }
+  });
 }
 
 function markRead(token, ids) {
