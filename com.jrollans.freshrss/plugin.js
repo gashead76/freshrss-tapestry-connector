@@ -122,9 +122,10 @@ function loadUnread(token) {
 
         // Build actions as a local object first, assign once
         const acts = {};
-        acts[isStarred ? "unstar" : "star"] = entry.id;
-        acts[isLabeled ? "label_remove" : "label_add"] = entry.id;
-        item.actions = acts;
+          acts[isStarred ? "unstar" : "star"] = entry.id;
+          acts[isLabeled ? "label_remove" : "label_add"] = entry.id;
+          acts["mark_read"] = entry.id;
+          item.actions = acts;
 
         return item;
       });
@@ -219,6 +220,26 @@ function performAction(actionId, actionValue, item) {
      })
      .catch((err) => { actionComplete(null, err); });
 
+} else if (actionId === "mark_read" || actionId === "mark_unread") {
+      const isMarking = (actionId === "mark_read");
+      const tag = "user/-/state/com.google/read";
+      const body = "i=" + encodeURIComponent(actionValue)
+        + (isMarking ? "&a=" : "&r=") + encodeURIComponent(tag);
+     
+      sendRequest(BASE() + "/reader/api/0/edit-tag", "POST", body, authHeaders(token))
+        .then(() => {
+          const actions = item.actions || {};
+          if (isMarking) {
+            delete actions["mark_read"];
+            actions["mark_unread"] = actionValue;
+          } else {
+            delete actions["mark_unread"];
+            actions["mark_read"] = actionValue;
+          }
+          item.actions = actions;
+          actionComplete(item, null);
+        })
+        .catch((err) => { actionComplete(null, err); });
  } else {
    actionComplete(null, new Error("Unknown action: " + actionId));
  }
