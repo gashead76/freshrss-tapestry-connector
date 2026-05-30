@@ -23,12 +23,12 @@
     {
       "id": "mark_unread",
       "name": "Mark as Unread",
-      "icon": "envelope"
+      "icon": "circle.inset.filled"
     },
     {
       "id": "mark_read",
       "name": "Mark as Read",
-      "icon": "envelope.open"
+      "icon": "circle"
     }
   ]
 }
