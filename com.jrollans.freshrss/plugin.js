@@ -124,7 +124,7 @@ function loadUnread(token) {
         const acts = {};
           acts[isStarred ? "unstar" : "star"] = entry.id;
           acts[isLabeled ? "label_remove" : "label_add"] = entry.id;
-          acts["mark_read"] = entry.id;
+          acts[auto_mark_read === "on" ? "mark_unread" : "mark_read"] = entry.id;
           item.actions = acts;
 
         return item;
