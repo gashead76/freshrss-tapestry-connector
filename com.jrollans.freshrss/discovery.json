@@ -1,0 +1,17 @@
+{
+  "url": [
+    {
+      "extract": "/(https?://[^/]+)/",
+      "variable": "site"
+    }
+  ],
+  "html": [
+    {
+      "element": "link",
+      "check": "rel",
+      "match": "manifest",
+      "use": "href",
+      "extract": "/p/themes/"
+    }
+  ]
+}
