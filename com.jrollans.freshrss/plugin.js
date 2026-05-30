@@ -27,21 +27,27 @@ function authHeaders(token) {
 // --- Verify ---
 
 function verify() {
- fetchToken()
-   .then((token) => {
-     return sendRequest(BASE() + "/reader/api/0/user-info", "GET", null, authHeaders(token));
-   })
-   .then((text) => {
-     const userInfo = JSON.parse(text);
-     const faviconUrl = site.replace(/\/$/, "") + "/favicon.ico";
-     processVerification({
-       displayName: userInfo.userEmail || username,
-       icon: faviconUrl
-     });
-   })
-   .catch((err) => {
-     processError(err);
-   });
+  fetchToken()
+    .then((token) => {
+      return sendRequest(BASE() + "/reader/api/0/user-info", "GET", null, authHeaders(token));
+    })
+    .then((text) => {
+      const userInfo = JSON.parse(text);
+      const faviconUrl = site.replace(/\/$/, "") + "/favicon.ico";
+
+      const identity = Identity.createWithName(userInfo.userEmail || username);
+      identity.avatar = faviconUrl;
+      identity.uri = site;
+
+      processVerification({
+        displayName: userInfo.userEmail || username,
+        icon: faviconUrl,
+        accountIdentity: identity
+      });
+    })
+    .catch((err) => {
+      processError(err);
+    });
 }
 
 // --- Load ---
