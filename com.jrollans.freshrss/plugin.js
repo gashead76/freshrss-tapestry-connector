@@ -56,80 +56,90 @@ function load() {
 }
 
 function loadUnread(token) {
- const headers = authHeaders(token);
- const count = Math.min(1000, Math.max(1, parseInt(batch_size, 10) || 50));
- const streamUrl = BASE() + "/reader/api/0/stream/contents/user/-/state/com.google/reading-list"
-   + "?xt=user/-/state/com.google/read&n=" + count + "&output=json";
- const subsUrl = BASE() + "/reader/api/0/subscription/list?output=json";
+  const headers = authHeaders(token);
+  const count = Math.min(1000, Math.max(1, parseInt(batch_size, 10) || 50));
+  const streamUrl = BASE() + "/reader/api/0/stream/contents/user/-/state/com.google/reading-list"
+    + "?xt=user/-/state/com.google/read&n=" + count + "&output=json";
+  const subsUrl = BASE() + "/reader/api/0/subscription/list?output=json";
 
- let iconMap = {};
+  let iconMap = {};
 
- sendRequest(subsUrl, "GET", null, headers)
-   .then((subsText) => {
-     const subs = JSON.parse(subsText);
-     for (const sub of (subs.subscriptions || [])) {
-       if (sub.id && sub.iconUrl) {
-         iconMap[sub.id] = sub.iconUrl;
-       }
-     }
-     return sendRequest(streamUrl, "GET", null, headers);
-   })
-   .then((streamText) => {
-     const stream = JSON.parse(streamText);
-     const entries = stream.items || [];
+  sendRequest(subsUrl, "GET", null, headers)
+    .then((subsText) => {
+      try {
+        const subs = JSON.parse(subsText);
+        for (const sub of (subs.subscriptions || [])) {
+          if (sub.id && sub.iconUrl) {
+            iconMap[sub.id] = sub.iconUrl;
+          }
+        }
+      } catch (e) {
+        // non-fatal, continue without icons
+      }
+      return sendRequest(streamUrl, "GET", null, headers);
+    })
+    .catch(() => {
+      // subscription list failed entirely — proceed without icons
+      return sendRequest(streamUrl, "GET", null, headers);
+    })
+    .then((streamText) => {
+      const stream = JSON.parse(streamText);
+      const entries = stream.items || [];
 
-     if (entries.length === 0) {
-       processResults([]);
-       return;
-     }
+      if (entries.length === 0) {
+        processResults([]);
+        return;
+      }
 
-     const results = entries.map((entry) => {
-       const uri = canonicalUrl(entry) || entry.id;
-       const date = new Date((entry.published || 0) * 1000);
+      const results = entries.map((entry) => {
+        const uri = canonicalUrl(entry) || entry.id;
+        const date = new Date((entry.published || 0) * 1000);
 
-       const item = Item.createWithUriDate(uri, date);
-       item.title = entry.title || "(untitled)";
-       item.body = entryBody(entry);
+        const item = Item.createWithUriDate(uri, date);
+        item.title = entry.title || "(untitled)";
+        item.body = entryBody(entry);
 
-       const src = entry.origin;
-       if (src) {
-         const identity = Identity.createWithName(src.title || src.streamId);
-         identity.uri = src.htmlUrl || null;
-         const icon = iconMap[src.streamId];
-         if (icon) {
-           identity.avatar = icon;
-         }
-         item.author = identity;
-       }
+        const src = entry.origin;
+        if (src) {
+          const identity = Identity.createWithName(src.title || src.streamId);
+          identity.uri = src.htmlUrl || null;
+          const icon = iconMap[src.streamId];
+          if (icon) {
+            identity.avatar = icon;
+          }
+          item.author = identity;
+        }
 
-       const cats = entry.categories || [];
-       const isStarred = cats.includes("user/-/state/com.google/starred");
-       const isLabeled = cats.includes("user/-/label/" + (label || "Released"));
+        const cats = entry.categories || [];
+        const isStarred = cats.includes("user/-/state/com.google/starred");
+        const isLabeled = cats.includes("user/-/label/" + (label || "Released"));
 
-       item.actions = {};
-       item.actions[isStarred ? "unstar" : "star"] = entry.id;
-       item.actions[isLabeled ? "label_remove" : "label_add"] = entry.id;
+        // Build actions as a local object first, assign once
+        const acts = {};
+        acts[isStarred ? "unstar" : "star"] = entry.id;
+        acts[isLabeled ? "label_remove" : "label_add"] = entry.id;
+        item.actions = acts;
 
-       return item;
-     });
+        return item;
+      });
 
-     processResults(results);
+      processResults(results);
 
-     if (auto_mark_read === "on") {
-       const ids = entries.map((e) => e.id);
-       markRead(token, ids);
-     }
-   })
-   .catch((err) => {
-     if (getToken()) {
-       setItem(TOKEN_KEY, null);
-       fetchToken()
-         .then((newToken) => loadUnread(newToken))
-         .catch(processError);
-     } else {
-       processError(err);
-     }
-   });
+      if (auto_mark_read === "on") {
+        const ids = entries.map((e) => e.id);
+        markRead(token, ids);
+      }
+    })
+    .catch((err) => {
+      if (getToken()) {
+        setItem(TOKEN_KEY, null);
+        fetchToken()
+          .then((newToken) => loadUnread(newToken))
+          .catch(processError);
+      } else {
+        processError(err);
+      }
+    });
 }
 
 function markRead(token, ids) {
