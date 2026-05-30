@@ -87,7 +87,14 @@ function loadUnread(token) {
           item.author = identity;
         }
 
-        item.actions = { "star": entry.id, "label_add": entry.id };
+        const cats = entry.categories || [];
+        const isStarred = cats.includes("user/-/state/com.google/starred");
+        const isLabeled = cats.includes("user/-/label/" + (label || "Released"));
+
+        item.actions = {};
+        item.actions[isStarred ? "unstar" : "star"] = entry.id;
+        item.actions[isLabeled ? "label_remove" : "label_add"] = entry.id;
+
         return item;
       });
 
