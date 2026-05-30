@@ -7,10 +7,6 @@
   "item_style": "article",
   "default_color": "teal",
   "minimum_app_version": "1.4",
-<<<<<<< HEAD
   "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/freshrss.png",
-=======
-  "icon": "https://freshrss.org/img/freshrss-logo.svg",
->>>>>>> main
   "version": 8
 }
